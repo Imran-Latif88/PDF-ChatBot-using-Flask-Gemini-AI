@@ -1,0 +1,10 @@
+Flask
+PyPDF2
+langchain
+langchain-google-genai
+langchain-community
+google-auth
+google-auth-oauthlib
+faiss-cpu
+requests
+python-dotenv
