@@ -21,9 +21,12 @@ PyPDF2 – PDF text extraction
 ⚡ Getting Started
 Clone the repository:
 git clone https://github.com/yourusername/repository-name.git
+
 cd repository-name
+
 Install dependencies:
 pip install -r requirements.txt
+
 Set up Google API credentials in .env:
 my_key=YOUR_GOOGLE_API_KEY
 
