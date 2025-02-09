@@ -26,7 +26,7 @@ PyPDF2 – PDF text extraction
 
 ⚡ Getting Started
 Clone the repository:
-git clone https://github.com/yourusername/repository-name.git
+git clone https://github.com/Imran-Latif88/PDF-ChatBot-using-Flask-Gemini-AI
 
 cd repository-name
 
