@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='pdfjs/web/viewer.css') }}"
+/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module">
+    import * as pdfjsLib from '/static/pdfjs/build/pdf.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/static/pdfjs/build/pdf.worker.mjs';
+    import * as pdfjsViewer from '/static/pdfjs/web/viewer.mjs';
+  </script>
+  <title>Chat PDF Interface</title>
+  <style>
+    #pdfViewer {
+      overflow-y: scroll; /* Enables vertical scrolling */
+      height: 90vh; /* Set a fixed height for the viewer */
+      padding: 10px;
+      display: block; /* Make sure the pages stack vertically */
+      margin: 0 auto; 
+    }
+    canvas {
+      display: block; /* Ensures each page takes up its full space */
+      margin: 20px 0; /* Adds some space between pages */
+    }
+  </style>
+  
+</head>
+<body class="bg-gray-100">
+
+  <div class="min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white p-4 flex flex-col">
+      <div class="flex items-center space-x-3 mb-6">
+        <div class="w-8 h-8 bg-purple-600 rounded-full"></div>
+        <h1 class="text-lg font-bold">ChatPDF</h1>
+      </div>
+      <div class="flex-1">
+        <button id="newChatBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded mb-4">
+          + New Chat
+        </button>
+        <!-- File Name Display -->
+        <p id="uploadedFileName" class="text-gray-400 text-sm italic mb-4">
+          
+        </p>
+        <!-- <ul id="pdfList" class="space-y-2"> -->
+          <!-- Dynamically added PDF list -->
+        <!-- </ul> -->
+      </div>
+      <div class="mt-6">
+        <button class="w-full text-gray-400 hover:text-white flex items-center space-x-2">
+          <span>This chat application powered by SkyOps Pvt</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+      <!-- Header -->
+      <header class="bg-white shadow p-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold">Chat with any PDF</h2>
+        <label for="fileUpload" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded cursor-pointer flex items-center">
+          <span>Upload PDF</span>
+          <div id="spinner" class="hidden animate-spin h-5 w-5 ml-2 border-2 border-t-2 border-white border-t-transparent rounded-full"></div>
+        </label>
+        <input type="file" id="fileUpload" accept=".pdf" class="hidden" />
+      </header>
+
+      <!-- Content -->
+      <div class="flex-1 flex">
+        <!-- PDF Viewer -->
+        <div id="pdfViewer" class="w-1/2 bg-white shadow p-4 overflow-auto">
+          <h3 class="text-lg font-bold">No PDF loaded</h3>
+          <p class="text-gray-600 mt-4">Upload a PDF to display its content here.</p>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="w-1/2 bg-gray-50 border-l border-gray-200 flex flex-col">
+          <div id="chatBox" class="flex-1 p-4 overflow-auto">
+            <p class="text-sm text-gray-600">Welcome 🎉</p>
+          </div>
+          <div class="p-4 bg-white border-t border-gray-200">
+            <input
+              id="chatInput"
+              type="text"
+              class="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-600"
+              placeholder="Enter and Ask any question"
+              disabled
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const fileUpload = document.getElementById("fileUpload");
+    const spinner = document.getElementById("spinner");
+    const pdfViewer = document.getElementById("pdfViewer");
+    const chatBox = document.getElementById("chatBox");
+    const chatInput = document.getElementById("chatInput");
+    const newChatBtn = document.getElementById("newChatBtn");
+    const uploadedFileNameElem = document.getElementById("uploadedFileName");
+
+    // Render PDF using PDF.js
+    async function renderPDF(pdfUrl) {
+      const pdf = await pdfjsLib.getDocument(pdfUrl).promise; //Ansible Tutorial for Beginners_ Playbook & Examples.pdf
+      pdfViewer.innerHTML = ""; // Clear existing content in the viewer div
+
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum); // Get each page
+        const viewport = page.getViewport({ scale: 1.5 }); // Scale for better resolution
+        const canvas = document.createElement("canvas"); // Create a canvas for the page
+        const context = canvas.getContext("2d");
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render the page into the canvas
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+        await page.render(renderContext).promise;
+
+        // Append the canvas to the #pdfViewer div
+        pdfViewer.appendChild(canvas);
+      }
+    }
+
+    // File Upload Handler
+    fileUpload.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Update file name in the sidebar
+      uploadedFileNameElem.textContent = file.name;
+
+      // Show spinner during processing
+      spinner.classList.remove("hidden");
+
+      const formData = new FormData();
+      formData.append("pdf", file);
+
+      const response = await fetch("/upload", { method: "POST", body: formData });
+      const result = await response.json();
+
+      // Hide spinner after processing
+      spinner.classList.add("hidden");
+
+      if (result.status === "Processing complete!") {
+        const pdfUrl = result.file_url; // The URL of the processed PDF
+        renderPDF(pdfUrl); // Call the renderPDF function to display the PDF
+        chatInput.disabled = false; // Enable the chat input
+      } else {
+        pdfViewer.innerHTML = `
+          <h3 class="text-lg font-bold text-red-600">Error</h3>
+          <p class="text-gray-600 mt-4">${result.status}</p>
+        `;
+      }
+    });
+
+    // Handle Chat Input
+    chatInput.addEventListener("keydown", async (event) => {
+  if (event.key === "Enter") {
+    const question = chatInput.value.trim();
+    if (!question) return;
+
+    // Clear the input box immediately
+    chatInput.value = "";
+
+    // Display user's question
+    chatBox.innerHTML += `
+      <div class="text-right text-blue-500 mb-4 space-x-4"><span class="text-xl">🧑:  </span>${question}</div>
+    `;
+
+    // Fetch answer from the server
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    const result = await response.json();
+
+    // Display bot's response
+    chatBox.innerHTML += `
+      <div class="text-left text-gray-700 mb-4 flex items-start space-x-4 p-2 rounded">
+        <img src="{{ url_for('static', filename='images/AvatarLogo.32a7bd47.svg') }}" alt="bot-icon" loading="lazy" width="20" height="30" class="flex-shrink-0">
+        <p class="text-sm leading-6 text-gray-800 bg-slate-200">${result.answer || "No response available."}</p>
+      </div>
+    `;
+
+    // Scroll to the bottom of chat
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+});
+
+    // New Chat Button
+    newChatBtn.addEventListener("click", () => {
+      // Clear the chat box
+      chatBox.innerHTML = '<p class="text-sm text-gray-600">Welcome 🎉 Feel free to ask questions about the uploaded PDF.</p>';
+
+      // Clear the chat input but keep it enabled
+      chatInput.value = "";
+    });
+  </script>
+
+</body>
+</html>
