@@ -45,9 +45,13 @@ http://127.0.0.1:5000
 📌 API Endpoints
 POST /upload → Upload a PDF file
 POST /chat → Ask a question about the uploaded PDF
+
 🎯 Use Cases
+
 AI-powered document search
+
 Automated report analysis
+
 Legal, research, and educational applications
 
 
