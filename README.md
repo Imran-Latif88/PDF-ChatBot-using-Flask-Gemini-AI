@@ -18,14 +18,21 @@ This repository contains a Flask-based chatbot that enables users to upload PDFs
 ![sample](https://github.com/user-attachments/assets/cd81dc9b-c905-4d6f-adb5-f5b5b867ea6e)
 
 🛠️ Tech Stack
-Flask – Web framework
-LangChain – Text processing & LLM integration
-Google Gemini AI – Embeddings & Chat model
-FAISS – Vector similarity search
-PyPDF2 – PDF text extraction
+
+✅ Flask – Web framework
+
+✅ LangChain – Text processing & LLM integration
+
+✅ Google Gemini AI – Embeddings & Chat model
+
+✅ FAISS – Vector similarity search
+
+✅ PyPDF2 – PDF text extraction
 
 ⚡ Getting Started
+
 Clone the repository:
+
 git clone https://github.com/Imran-Latif88/PDF-ChatBot-using-Flask-Gemini-AI
 
 cd repository-name
